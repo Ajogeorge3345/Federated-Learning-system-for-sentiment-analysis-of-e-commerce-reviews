@@ -1,0 +1,10 @@
+datasets>=2.19.0
+transformers>=4.41.0
+torch>=2.2.0
+scikit-learn>=1.4.0
+pandas>=2.2.0
+numpy>=1.26.0
+tqdm>=4.66.0
+
+# Federated learning (install later, Phase 4+)
+# flwr[simulation]>=1.8.0
