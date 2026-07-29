@@ -1,0 +1,90 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "fedsent"
+version = "0.1.0"
+description = "Federated Sentiment Analysis on Distributed E-commerce Reviews using DistilBERT and Flower"
+requires-python = ">=3.11,<3.14"
+dependencies = [
+    "flwr[simulation]>=1.8.0",
+    "torch>=2.2.0,<2.7.0",
+    "transformers>=4.41.0,<5.0.0",
+    "accelerate>=1.1.0",
+    "datasets>=2.19.0",
+    "scikit-learn>=1.4.0",
+    "pandas>=2.2.0",
+    "numpy>=1.26.0",
+    "matplotlib>=3.8.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["federated", "utils"]
+
+[tool.uv.sources]
+torch = { index = "pytorch-cu124" }
+
+[[tool.uv.index]]
+name = "pytorch-cu124"
+url = "https://download.pytorch.org/whl/cu124"
+explicit = true
+
+[tool.flwr.app]
+publisher = "ajo"
+
+[tool.flwr.app.components]
+serverapp = "federated.server_app:app"
+clientapp = "federated.client_app:app"
+
+[tool.flwr.app.config]
+# --- FL hyperparameters ---
+num-server-rounds = 3
+local-epochs = 1
+learning-rate = 2e-5
+batch-size = 16
+fraction-evaluate = 1.0
+
+# --- Experiment switches (Phases 6/7) ---
+# "non_iid" -> one product category per client (Phase 7)
+# "iid"     -> categories shuffled and split evenly (Phase 6)
+partition-strategy = "iid"
+
+# Set true to reproduce the Phase 3 frozen-baseline comparison in the
+# federated setting (only classifier head is trained/communicated)
+freeze-base = false
+
+save-model = true
+
+
+#######################################################################
+# CONFIGURATION MIGRATION NOTICE:
+#
+# What was previously called "federation config" for SuperLink
+# connections in pyproject.toml has been renamed and moved.
+#
+# These settings are now **SuperLink connection configuration**
+# and are defined in the Flower configuration file.
+#
+# The entries below are commented out intentionally and are kept
+# only as a migration reference.
+#
+# Docs: https://flower.ai/docs/framework/ref-flower-configuration.html
+#######################################################################
+
+# [tool.flwr.federations]
+# default = "local-simulation"
+
+# # CPU-only federation. Safe fallback, but very slow for a transformer model.
+# [tool.flwr.federations.local-simulation]
+# options.num-supernodes = 4
+
+# # GPU federation -- use this one on your RTX 3050.
+# # num-gpus = 1.0 per client means only ONE client trains at a time on the
+# # GPU (they take turns), which matters since your GPU only has 4GB and a
+# # DistilBERT model + optimizer state won't comfortably share it across
+# # multiple concurrent clients.
+# [tool.flwr.federations.local-simulation-gpu]
+# options.num-supernodes = 4
+# options.backend.client-resources.num-cpus = 2
+# options.backend.client-resources.num-gpus = 1.0
